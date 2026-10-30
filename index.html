@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Продажи в ЖК МБ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&family=Onest:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Светлый макет: серая подложка, белые карточки, зеленый только для заливок и линий */
+:root{
+  --bg:#eef0f2; --panel:#ffffff; --panel2:#f5f6f8; --line:#e2e5e9; --line2:#d5d9df;
+  --text:#1f2328; --muted:#6b727e; --faint:#9aa1ab;
+  --green:#2fa36b; --green-soft:#e3f4ea; --green-line:#bfe3cd;
+  --r1:#7aa7f0; --r2:#62cfa4; --r3:#e9b071; --r4:#b394ea;
+  --warn:#c9583f; --coral:#e0795f;
+  --head:"M PLUS Rounded 1c","Nunito","Segoe UI",Arial,sans-serif;
+  --body:Onest,"Segoe UI",Arial,sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--body);font-size:14px}
+.wrap{max-width:1680px;margin:0 auto;padding:22px 24px 28px}
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+h1{font-family:var(--head);font-size:28px;font-weight:800;margin:0;letter-spacing:-.2px}
+.sub{color:var(--muted);margin-top:4px}
+.btn{background:var(--panel);color:var(--text);border:1px solid var(--line2);border-radius:10px;padding:7px 12px;font:inherit;cursor:pointer}
+.btn:hover{border-color:#b9bfc8}
+.btn:focus-visible,.seg button:focus-visible{outline:2px solid var(--green);outline-offset:1px}
+.btn.on{background:var(--green-soft);border-color:var(--green)}
+
+/* фильтры */
+.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.dd{position:relative}
+.dd>.btn{display:flex;gap:8px;align-items:center}
+.dd .cnt{background:var(--green);color:#fff;border-radius:10px;padding:0 7px;font-size:12px}
+.pop{position:absolute;top:calc(100% + 6px);left:0;z-index:30;background:var(--panel);border:1px solid var(--line2);border-radius:12px;padding:6px;min-width:220px;max-height:320px;overflow:auto;display:none;box-shadow:0 12px 30px rgba(31,35,40,.12)}
+.dd.open .pop{display:block}
+.pop label{display:flex;gap:8px;align-items:center;padding:6px 8px;border-radius:8px;cursor:pointer;white-space:nowrap}
+.pop label:hover{background:var(--panel2)}
+.pop input{accent-color:var(--green)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{background:var(--green-soft);border:1px solid var(--green-line);border-radius:20px;padding:4px 10px;font-size:12px;cursor:pointer;color:var(--text)}
+.chip:hover{border-color:var(--green)}
+.chip b{color:var(--muted);font-weight:500;margin-right:4px}
+
+/* KPI */
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:14px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px 16px}
+.kpi .t{color:var(--muted);font-size:13px}
+.kpi .v{font-family:var(--head);font-size:32px;font-weight:800;margin-top:6px;letter-spacing:-.3px;font-variant-numeric:tabular-nums}
+.kpi .v small{font-family:var(--body);font-size:15px;color:var(--muted);font-weight:500;margin-left:4px}
+.kpi .n{color:var(--faint);font-size:12px;margin-top:4px}
+
+/* сетка */
+.grid{display:grid;grid-template-columns:minmax(0,1.85fr) minmax(0,1fr);gap:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px 16px;position:relative;min-width:0}
+.card.main{display:flex;flex-direction:column}
+.card h2{font-family:var(--head);font-size:16px;font-weight:700;margin:0;text-wrap:balance}
+.card .hint{color:var(--muted);font-size:12px;margin-top:3px}
+.right{display:flex;flex-direction:column;gap:12px;min-width:0}
+.chart{width:100%}
+
+/* 3D */
+.scene-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.seg{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:3px;gap:2px}
+.seg button{background:none;border:1px solid transparent;color:var(--muted);font:inherit;font-size:13px;padding:5px 10px;border-radius:8px;cursor:pointer}
+.seg button.on{background:var(--panel);border-color:var(--green);color:var(--text);box-shadow:0 1px 2px rgba(31,35,40,.08)}
+.tools{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+#scene{position:relative;flex:1;min-height:600px;margin-top:10px;border-radius:12px;overflow:hidden;background:linear-gradient(180deg,#f4f5f7 0%,#e7eaee 100%)}
+#scene canvas{display:block}
+.lbl{position:absolute;transform:translate(-50%,-100%);pointer-events:none;text-align:center;white-space:nowrap;background:rgba(255,255,255,.85);border:1px solid var(--line);border-radius:8px;padding:2px 8px}
+.lbl .n{font-family:var(--head);font-weight:800;font-size:14px}
+.lbl .p{font-size:11px;color:var(--muted)}
+.lbl .p.bad{color:var(--warn)}
+#tip{position:absolute;pointer-events:none;background:rgba(255,255,255,.98);border:1px solid var(--line2);border-radius:12px;padding:9px 11px;font-size:12px;line-height:1.55;display:none;z-index:5;min-width:190px;box-shadow:0 10px 26px rgba(31,35,40,.14)}
+#tip b{font-family:var(--head);font-size:13px}
+#tip .mut{color:var(--muted)}
+.legend{position:absolute;left:12px;bottom:10px;display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted);background:rgba(255,255,255,.88);border:1px solid var(--line);padding:6px 10px;border-radius:10px;max-width:calc(100% - 24px)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-2px}
+.legend .grad{width:90px;height:10px;border-radius:5px;display:inline-block;vertical-align:-1px;margin:0 6px}
+.legend .ext{display:inline-block;width:16px;height:12px;margin-right:5px;vertical-align:-2px;border-radius:2px;background:linear-gradient(90deg,#c9ced6 0 55%,#9aa1ab 55%);}
+.help{position:absolute;right:12px;top:10px;font-size:11px;color:var(--muted);background:rgba(255,255,255,.88);border:1px solid var(--line);padding:5px 9px;border-radius:10px}
+
+/* менеджеры */
+table.mg{width:100%;border-collapse:collapse;margin-top:10px;font-size:13px;font-variant-numeric:tabular-nums}
+.mg th{color:var(--muted);font-weight:500;text-align:left;padding:5px 6px;border-bottom:1px solid var(--line);font-size:12px}
+.mg td{padding:6px;border-bottom:1px solid #eef0f2;white-space:nowrap}
+.mg tr.row{cursor:pointer}
+.mg tr.row:hover td{background:var(--panel2)}
+.mg tr.dim td{opacity:.4}
+.mg tr.sel td{background:var(--green-soft)}
+.bar{position:relative;height:18px;min-width:70px}
+.bar span{position:absolute;left:0;top:3px;height:12px;border-radius:3px}
+.bar em{position:relative;font-style:normal;font-size:12px;padding-left:4px;line-height:18px}
+.num{text-align:right}
+
+.ins{margin-top:12px}
+.ins ul{margin:8px 0 0;padding-left:18px;color:#3a4048;line-height:1.6;max-width:120ch}
+.foot{color:var(--faint);font-size:12px;margin-top:14px}
+@media (max-width:1100px){.grid{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}#scene{min-height:520px}}
+@media (max-width:600px){.wrap{padding:16px}.kpis{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Продажи в ЖК МБ</h1>
+      <div class="sub">март - сентябрь 2026 · 367 квартир в 6 корпусах · частица данных - сделка</div>
+    </div>
+    <button class="btn" id="resetAll">Сбросить фильтры</button>
+  </header>
+
+  <div class="filters" id="filters"></div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="grid">
+    <div class="card main">
+      <div class="scene-head">
+        <div>
+          <h2>Шахматка в 3D: какие квартиры проданы, а какие нет</h2>
+          <div class="hint">Каждый блок - квартира. Заливка - продана, стекло - еще в продаже, выступающий блок - продана со скидкой. Клик по квартире фильтрует дашборд по корпусу.</div>
+        </div>
+        <div class="tools">
+          <div class="seg" id="modes">
+            <button data-m="rooms" class="on">Комнаты</button>
+            <button data-m="disc">Скидки</button>
+            <button data-m="days">Срок сделки</button>
+            <button data-m="price">Цена м²</button>
+          </div>
+          <button class="btn" id="spin">Вращение</button>
+          <button class="btn" id="home">Вид</button>
+        </div>
+      </div>
+      <div id="scene">
+        <div id="tip"></div>
+        <div class="legend" id="legend"></div>
+        <div class="help">мышь: повернуть · колесо: приблизить · правая кнопка: сдвинуть</div>
+      </div>
+    </div>
+
+    <div class="right">
+      <div class="card">
+        <h2>Сделки по неделям</h2>
+        <div class="hint">Столбцы - число сделок, линия - выручка. Клик по неделе фильтрует дашборд.</div>
+        <div class="chart" id="weeks" style="height:200px"></div>
+      </div>
+      <div class="card">
+        <h2>Какая доля квартир продана: корпус и число комнат</h2>
+        <div class="hint">Клик по ячейке оставит только этот корпус и комнатность.</div>
+        <div class="chart" id="heat" style="height:220px"></div>
+      </div>
+      <div class="card">
+        <h2>Менеджеры: сколько продали, сколько уступили и как быстро</h2>
+        <div class="hint">Клик по строке фильтрует дашборд по менеджеру.</div>
+        <table class="mg" id="mg"></table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card ins">
+    <h2>Что видно</h2>
+    <ul>
+      <li>Сделок около восьми в неделю, и этот темп держится все полгода. Но с августа выручка в месяц на треть ниже: дорогие квартиры уже продали.</li>
+      <li>Хуже всего идут К3 и К5, там продано меньше половины. В К3 не купили ни одной двушки из 12, а у квартир с окнами в соседние корпуса продаж нет совсем, 0 из 14.</li>
+      <li>В К1 плохо продается одна планировка трешек с видом во двор: 2 из 10. Такие же трешки с видом на Садовое проданы 10 из 15.</li>
+      <li>Две трети всех скидок дал Виктор Андреевич, 169 из 258 млн. Ольга Николаевна и Тимур Ринатович приносят много денег почти без скидок, а Тимур закрывает сделку за 5-6 дней.</li>
+    </ul>
+  </div>
+  <div class="foot">Данные: продажи ЖК МБ, 02.03-30.09.2026. Покупателей в данных нет, поэтому выводов о них дашборд не делает.</div>
+</div>
+
+<script src="lib/three.min.js"></script>
+<script src="lib/OrbitControls.js"></script>
+<script src="lib/echarts.min.js"></script>
+<script src="data.js"></script>
+<script>
+(function(){
+'use strict';
+const F = window.FLATS;
+F.forEach(f => { f.n = +f.id.split('-').pop(); f.sold = !!f.dt; });
+
+/* ---------- общее состояние и фильтры ---------- */
+const S = {b:new Set(), r:new Set(), m:new Set(), v:new Set(), w:new Set()};
+const DIM = {
+  b:{title:'Корпус', vals:[...new Set(F.map(f=>f.b))].sort()},
+  r:{title:'Комнат', vals:[1,2,3,4], fmt:v=>v+'-комн.'},
+  m:{title:'Менеджер', vals:[...new Set(F.filter(f=>f.m).map(f=>f.m))].sort()},
+  v:{title:'Вид', vals:[...new Set(F.map(f=>f.v))].sort()},
+  w:{title:'Неделя', vals:[], fmt:v=>'неделя с '+fmtDate(v)}
+};
+function weekOf(ds){ const d=new Date(ds+'T00:00:00Z'); const k=(d.getUTCDay()+6)%7; d.setUTCDate(d.getUTCDate()-k); return d.toISOString().slice(0,10); }
+function fmtDate(ds){ const [y,m,d]=ds.split('-'); return d+'.'+m; }
+F.forEach(f => { f.wk = f.sold ? weekOf(f.dt) : null; });
+const WEEKS = (()=>{ const out=[]; let d=new Date('2026-03-02T00:00:00Z'); while(d<=new Date('2026-09-28T00:00:00Z')){ out.push(d.toISOString().slice(0,10)); d.setUTCDate(d.getUTCDate()+7);} return out; })();
+DIM.w.vals = WEEKS;
+
+const fieldOf = {b:'b', r:'r', m:'m', v:'v', w:'wk'};
+// skip: измерения, которые не применяем (сам источник фильтра); freeUnsold: у непроданных нет менеджера и недели сделки
+function pass(f, skip, freeUnsold){
+  for (const k of ['b','r','m','v','w']){
+    if (skip && skip.indexOf(k) !== -1) continue;
+    const set = S[k]; if (!set.size) continue;
+    if (freeUnsold && !f.sold && (k==='m' || k==='w')) continue;
+    if (!set.has(f[fieldOf[k]])) return false;
+  }
+  return true;
+}
+function toggle(k, val, solo){
+  if (solo){ const had = S[k].has(val) && S[k].size===1; S[k].clear(); if(!had) S[k].add(val); }
+  else { S[k].has(val) ? S[k].delete(val) : S[k].add(val); }
+  update();
+}
+
+const nf = new Intl.NumberFormat('ru-RU');
+const bn = v => (v/1e9).toFixed(1).replace('.',',');
+const mn = v => Math.round(v/1e6);
+
+/* ---------- панель фильтров ---------- */
+const fEl = document.getElementById('filters');
+function buildFilters(){
+  fEl.innerHTML = '';
+  ['b','r','m','v'].forEach(k => {
+    const dd = document.createElement('div'); dd.className='dd';
+    const cnt = S[k].size ? '<span class="cnt">'+S[k].size+'</span>' : '';
+    dd.innerHTML = '<button class="btn">'+DIM[k].title+cnt+' ▾</button><div class="pop"></div>';
+    const pop = dd.querySelector('.pop');
+    DIM[k].vals.forEach(v => {
+      const l = document.createElement('label');
+      l.innerHTML = '<input type="checkbox" '+(S[k].has(v)?'checked':'')+'> '+(DIM[k].fmt?DIM[k].fmt(v):v);
+      l.querySelector('input').addEventListener('change', () => { toggle(k, v); openDD = k; });
+      pop.appendChild(l);
+    });
+    dd.querySelector('.btn').addEventListener('click', e => { e.stopPropagation(); const was = dd.classList.contains('open'); closeAll(); if(!was){ dd.classList.add('open'); openDD=k; } });
+    pop.addEventListener('click', e => e.stopPropagation());
+    if (openDD===k) dd.classList.add('open');
+    fEl.appendChild(dd);
+  });
+  const chips = document.createElement('div'); chips.className='chips';
+  Object.keys(S).forEach(k => S[k].forEach(v => {
+    const c = document.createElement('span'); c.className='chip';
+    c.innerHTML = '<b>'+DIM[k].title+':</b>'+(DIM[k].fmt?DIM[k].fmt(v):v)+' ✕';
+    c.addEventListener('click', () => toggle(k, v));
+    chips.appendChild(c);
+  }));
+  fEl.appendChild(chips);
+}
+let openDD = null;
+function closeAll(){ openDD=null; document.querySelectorAll('.dd.open').forEach(d=>d.classList.remove('open')); }
+document.addEventListener('click', closeAll);
+document.getElementById('resetAll').addEventListener('click', () => { Object.values(S).forEach(s=>s.clear()); update(); flyHome(); });
+
+/* ---------- KPI ---------- */
+function renderKPI(){
+  const deals = F.filter(f => f.sold && pass(f));
+  const base = F.filter(f => pass(f, ['m','w']));
+  const rev = deals.reduce((a,f)=>a+f.s,0), disc = deals.reduce((a,f)=>a+f.d,0), list = deals.reduce((a,f)=>a+f.pr,0);
+  const soldN = base.filter(f=>f.sold).length, left = base.filter(f=>!f.sold);
+  const leftV = left.reduce((a,f)=>a+f.pr,0);
+  const share = base.length ? Math.round(soldN/base.length*100) : 0;
+  const k = [
+    ['Выручка', bn(rev), 'млрд ₽', deals.length ? 'средний чек '+mn(rev/deals.length)+' млн ₽' : 'нет сделок'],
+    ['Потери на скидках', mn(disc), 'млн ₽', list ? (disc/list*100).toFixed(1).replace('.',',')+'% от стоимости, '+deals.filter(f=>f.d>0).length+' сделок со скидкой' : ''],
+    ['Сделок', deals.length, '', deals.length ? 'в среднем '+(deals.reduce((a,f)=>a+f.dw,0)/deals.length).toFixed(1).replace('.',',')+' дн. от обращения' : ''],
+    ['Продано квартир', share, '%', soldN+' из '+base.length],
+    ['Еще в продаже', left.length, 'кв.', 'на '+bn(leftV)+' млрд ₽ по цене без скидки']
+  ];
+  document.getElementById('kpis').innerHTML = k.map(x =>
+    '<div class="kpi"><div class="t">'+x[0]+'</div><div class="v">'+x[1]+(x[2]?'<small>'+x[2]+'</small>':'')+'</div><div class="n">'+x[3]+'</div></div>').join('');
+}
+
+/* ---------- 3D ---------- */
+const host = document.getElementById('scene');
+const renderer = new THREE.WebGLRenderer({antialias:true, alpha:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputEncoding = THREE.sRGBEncoding;
+host.insertBefore(renderer.domElement, host.firstChild);
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0xeaedf0, 130, 270);
+const camera = new THREE.PerspectiveCamera(36, 1, 0.5, 1000);
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true; controls.dampingFactor = 0.08;
+controls.maxPolarAngle = Math.PI*0.48; controls.minDistance = 25; controls.maxDistance = 260;
+controls.autoRotateSpeed = 0.6;
+
+scene.add(new THREE.HemisphereLight(0xffffff, 0xc3c9d1, 0.55));
+const sun = new THREE.DirectionalLight(0xffffff, 0.62);
+sun.position.set(70, 120, 60); sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, {left:-120, right:120, top:120, bottom:-120, near:10, far:400});
+sun.shadow.bias = -0.0005;
+scene.add(sun);
+const rim = new THREE.DirectionalLight(0xffffff, 0.25); rim.position.set(-80, 40, -90); scene.add(rim);
+
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(2400, 2400), new THREE.MeshStandardMaterial({color:0xe4e7eb, roughness:1, metalness:0}));
+ground.rotation.x = -Math.PI/2; ground.receiveShadow = true; scene.add(ground);
+const grid = new THREE.GridHelper(600, 120, 0xd3d8de, 0xdde1e6); grid.position.y = 0.01; scene.add(grid);
+
+const K = 0.072, FH = 1.35, DEPTH = 5.2, GAP = 0.14;
+const MAXD = Math.max(...F.map(f=>f.d));
+const byB = {};
+F.slice().sort((a,b)=> a.b<b.b?-1:a.b>b.b?1:a.n-b.n).forEach(f => {
+  const B = byB[f.b] || (byB[f.b] = {name:f.b, floors:{}, w:0, top:0, flats:[]});
+  const fl = B.floors[f.fl] || (B.floors[f.fl] = {x:0});
+  f.x0 = fl.x; fl.x += f.a; B.w = Math.max(B.w, fl.x); B.top = Math.max(B.top, f.fl); B.flats.push(f);
+});
+// генплан: высокие корпуса сзади, низкие спереди
+const PLAN = [['К4','К1','К6'], ['К2','К3','К5']];
+const ROWZ = [-14, 20];
+PLAN.forEach((row, ri) => {
+  const ws = row.map(n => byB[n].w*K); const gap = 12;
+  let x = -(ws.reduce((a,b)=>a+b,0) + gap*(row.length-1))/2;
+  row.forEach((n,i) => { byB[n].ox = x; byB[n].oz = ROWZ[ri]; x += ws[i] + gap; });
+});
+
+const boxes = [], meshes = [];
+const boxGeo = new THREE.BoxGeometry(1,1,1);
+const edgeGeo = new THREE.EdgesGeometry(boxGeo);
+const tagGeo = new THREE.BoxGeometry(0.55, 0.55, 0.08);
+Object.values(byB).forEach(B => {
+  const W = B.w*K;
+  const base = new THREE.Mesh(new THREE.BoxGeometry(W+3, 0.5, DEPTH+3), new THREE.MeshStandardMaterial({color:0xf8f9fa, roughness:.9}));
+  base.position.set(B.ox + W/2, 0.25, B.oz); base.receiveShadow = true; scene.add(base);
+  B.center = new THREE.Vector3(B.ox + W/2, 0, B.oz);
+  B.flats.forEach(f => {
+    const w = f.a*K - GAP, h = FH - GAP;
+    const mat = new THREE.MeshStandardMaterial({color:0xffffff, roughness:.5, metalness:.08, transparent:true});
+    const m = new THREE.Mesh(boxGeo, mat);
+    m.scale.set(w, h, DEPTH);
+    m.position.set(B.ox + f.x0*K + w/2 + GAP/2, 0.5 + (f.fl-2)*FH + h/2 + GAP/2, B.oz);
+    m.castShadow = true; m.receiveShadow = true; m.userData.f = f;
+    const e = new THREE.LineSegments(edgeGeo, new THREE.LineBasicMaterial({color:0xaeb7c4, transparent:true}));
+    m.add(e);
+    // скидка: квартира выдвигается вперед из фасада, чем больше скидка, тем дальше
+    if (f.d > 0){
+      const ext = 1.2 + 3.3*Math.sqrt(f.d/MAXD);
+      m.scale.z = DEPTH + ext; m.position.z = B.oz + ext/2;
+    }
+    const tag = null;
+    scene.add(m);
+    const o = {f, m, e, tag}; boxes.push(o); meshes.push(m); f.obj = o;
+  });
+});
+
+/* цвета по режимам */
+let MODE = 'rooms';
+const C = {
+  rooms: {1:0x7aa7f0, 2:0x62cfa4, 3:0xe9b071, 4:0xb394ea},
+  glass: new THREE.Color(0xf3f5f8)
+};
+const lerpC = (stops, t) => { t = Math.max(0, Math.min(1, t)); const n = stops.length-1; const i = Math.min(n-1, Math.floor(t*n)); const u = t*n - i; return new THREE.Color(stops[i]).lerp(new THREE.Color(stops[i+1]), u); };
+const maxDisc = Math.max(...F.map(f=>f.d)), pmMin = Math.min(...F.map(f=>f.pm)), pmMax = Math.max(...F.map(f=>f.pm));
+function colorOf(f){
+  if (MODE==='rooms') return new THREE.Color(C.rooms[f.r]);
+  if (MODE==='disc') return f.d>0 ? lerpC([0xf2d48a,0xef8b5a,0xe35d5d], Math.sqrt(f.d/maxDisc)) : new THREE.Color(0x56606e);
+  if (MODE==='days') return lerpC([0x62cfa4,0xe9d16b,0xef7b7b], (f.dw-4)/22);
+  if (MODE==='price') return lerpC([0x5b8fd6,0x9c86e0,0xe08fb0], (f.pm-pmMin)/(pmMax-pmMin));
+}
+let hovered = null;
+function paint(){
+  boxes.forEach(o => {
+    const f = o.f, on = pass(f, null, true), mat = o.m.material;
+    o.on = on;
+    if (!on){
+      mat.color.set(0xd5dae0); mat.opacity = 0.08; mat.depthWrite = false; mat.emissive.set(0x000000);
+      o.e.material.opacity = 0.18; o.e.material.color.set(0xaab2bd);
+      if (o.tag) o.tag.visible = false; o.m.castShadow = false; return;
+    }
+    if (o.tag) o.tag.visible = (MODE==='rooms' || MODE==='disc') && f.sold;
+    if (f.sold){
+      mat.color.copy(colorOf(f)); mat.opacity = 1; mat.depthWrite = true; o.m.castShadow = true;
+      o.e.material.color.set(0x2b3138); o.e.material.opacity = 0.28;
+    } else {
+      const tint = MODE==='price' ? colorOf(f) : (MODE==='rooms' ? new THREE.Color(C.rooms[f.r]).lerp(C.glass, .55) : C.glass.clone());
+      mat.color.copy(tint); mat.opacity = MODE==='price' ? 0.4 : 0.3; mat.depthWrite = false; o.m.castShadow = false;
+      o.e.material.color.copy(tint.clone().lerp(new THREE.Color(0x5d6673), .45)); o.e.material.opacity = 0.75;
+    }
+    mat.emissive.set(o===hovered ? 0x2a3a30 : 0x000000);
+  });
+  renderLegend();
+}
+function renderLegend(){
+  const L = document.getElementById('legend');
+  const glass = '<span><i style="background:#f3f5f8;border:1px solid #8e97a3"></i>стекло - еще в продаже</span>';
+  const tag = '<span><i class="ext"></i>выступает вперед - продана со скидкой</span>';
+  if (MODE==='rooms') L.innerHTML = ['1-комн.','2-комн.','3-комн.','4-комн.'].map((t,i)=>'<span><i style="background:var(--r'+(i+1)+')"></i>'+t+'</span>').join('')+glass+tag;
+  if (MODE==='disc') L.innerHTML = '<span><i style="background:#56606e"></i>без скидки</span><span>скидка<span class="grad" style="background:linear-gradient(90deg,#f2d48a,#ef8b5a,#e35d5d)"></span>до '+(maxDisc/1e6).toFixed(1).replace('.',',')+' млн ₽</span>'+glass+tag;
+  if (MODE==='days') L.innerHTML = '<span>от обращения до сделки: 4 дн.<span class="grad" style="background:linear-gradient(90deg,#62cfa4,#e9d16b,#ef7b7b)"></span>26+ дн.</span>'+glass+tag;
+  if (MODE==='price') L.innerHTML = '<span>цена м²: '+(pmMin/1e6).toFixed(2).replace('.',',')+' млн<span class="grad" style="background:linear-gradient(90deg,#5b8fd6,#9c86e0,#e08fb0)"></span>'+(pmMax/1e6).toFixed(2).replace('.',',')+' млн ₽</span><span>непроданные - полупрозрачные, тем же цветом</span>'+tag;
+}
+
+/* подписи корпусов */
+const labels = {};
+Object.values(byB).forEach(B => {
+  const d = document.createElement('div'); d.className='lbl'; host.appendChild(d); labels[B.name] = d;
+  B.top3 = new THREE.Vector3(B.ox + B.w*K/2, 0.5 + (B.top-1)*FH + 2.2, B.oz);
+});
+function renderLabels(){
+  Object.values(byB).forEach(B => {
+    const fl = B.flats.filter(f => pass(f, ['m','w']));
+    const sold = fl.filter(f=>f.sold).length, sh = fl.length ? Math.round(sold/fl.length*100) : 0;
+    labels[B.name].innerHTML = '<div class="n">'+B.name+'</div><div class="p'+(fl.length && sh<50?' bad':'')+'">'+(fl.length ? sold+'/'+fl.length+' · '+sh+'%' : '')+'</div>';
+    labels[B.name].style.opacity = fl.length ? 1 : .3;
+  });
+}
+function placeLabels(){
+  const r = host.getBoundingClientRect();
+  Object.values(byB).forEach(B => {
+    const p = B.top3.clone().project(camera);
+    const el = labels[B.name];
+    if (p.z > 1){ el.style.display='none'; return; }
+    el.style.display=''; el.style.left = ((p.x+1)/2*r.width)+'px'; el.style.top = ((1-p.y)/2*r.height)+'px';
+  });
+}
+
+/* камера */
+const HOME = {pos:new THREE.Vector3(-72, 92, 150), tgt:new THREE.Vector3(0, 12, 0)};
+camera.position.copy(HOME.pos); controls.target.copy(HOME.tgt);
+let fly = null;
+function flyTo(pos, tgt){ fly = {p0:camera.position.clone(), t0:controls.target.clone(), p1:pos, t1:tgt, s:performance.now()}; }
+function flyHome(){ flyTo(HOME.pos.clone(), HOME.tgt.clone()); }
+function flyToB(name){
+  const B = byB[name]; const h = (B.top-1)*FH; const c = B.center.clone(); c.y = h*0.5;
+  const dist = Math.max(60, Math.max(B.w*K, h)*2.5);
+  flyTo(new THREE.Vector3(c.x - dist*0.35, c.y + dist*0.38, c.z + dist*0.9), c);
+}
+document.getElementById('home').addEventListener('click', flyHome);
+const spinBtn = document.getElementById('spin');
+spinBtn.addEventListener('click', () => { controls.autoRotate = !controls.autoRotate; spinBtn.classList.toggle('on', controls.autoRotate); });
+document.querySelectorAll('#modes button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('#modes button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); MODE = b.dataset.m; paint();
+}));
+
+/* наведение и клик */
+const ray = new THREE.Raycaster(), mouse = new THREE.Vector2(), tip = document.getElementById('tip');
+let downAt = null;
+function pick(ev){
+  const r = renderer.domElement.getBoundingClientRect();
+  mouse.x = ((ev.clientX-r.left)/r.width)*2-1; mouse.y = -((ev.clientY-r.top)/r.height)*2+1;
+  ray.setFromCamera(mouse, camera);
+  const hit = ray.intersectObjects(meshes.filter(m=>m.userData.f.obj.on), false)[0];
+  return hit ? hit.object.userData.f.obj : null;
+}
+renderer.domElement.addEventListener('pointermove', ev => {
+  const o = pick(ev);
+  if (o !== hovered){ const prev = hovered; hovered = o; [prev, o].forEach(x => { if (x) x.m.material.emissive.set(x===hovered ? 0x2a3a30 : 0x000000); }); }
+  if (!o){ tip.style.display='none'; renderer.domElement.style.cursor='grab'; return; }
+  renderer.domElement.style.cursor='pointer';
+  const f = o.f, r = host.getBoundingClientRect();
+  tip.innerHTML = '<b>'+f.id+'</b><br>'+f.r+'-комн., '+String(f.a).replace('.',',')+' м², '+f.fl+' этаж<br><span class="mut">Вид:</span> '+f.v+'<br><span class="mut">Цена м²:</span> '+(f.pm/1e6).toFixed(2).replace('.',',')+' млн ₽<br>'+
+    (f.sold ? 'Продана '+fmtDate(f.dt)+' за '+(f.s/1e6).toFixed(1).replace('.',',')+' млн ₽<br><span class="mut">Скидка:</span> '+(f.d>0?(f.d/1e6).toFixed(1).replace('.',',')+' млн ₽':'нет')+'<br><span class="mut">Менеджер:</span> '+f.m+', '+f.dw+' дн.'
+      : '<span style="color:var(--warn)">Еще в продаже</span>, '+(f.pr/1e6).toFixed(1).replace('.',',')+' млн ₽');
+  tip.style.display='block';
+  let x = ev.clientX - r.left + 14, y = ev.clientY - r.top + 14;
+  if (x + 230 > r.width) x -= 250; if (y + 170 > r.height) y -= 180;
+  tip.style.left = x+'px'; tip.style.top = y+'px';
+});
+renderer.domElement.addEventListener('pointerleave', () => { tip.style.display='none'; if (hovered){ hovered.m.material.emissive.set(0); hovered=null; } });
+renderer.domElement.addEventListener('pointerdown', ev => { downAt = [ev.clientX, ev.clientY]; controls.autoRotate = false; spinBtn.classList.remove('on'); });
+renderer.domElement.addEventListener('pointerup', ev => {
+  if (!downAt || Math.hypot(ev.clientX-downAt[0], ev.clientY-downAt[1]) > 4) return;
+  const o = pick(ev); if (!o) return;
+  toggle('b', o.f.b, true);
+  if (S.b.size === 1) flyToB(o.f.b); else flyHome();
+});
+
+function resize(){
+  const w = host.clientWidth, h = host.clientHeight;
+  renderer.setSize(w, h); camera.aspect = w/h; camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(host); resize();
+function loop(t){
+  if (fly){ const u = Math.min(1, (t - fly.s)/900), e = u<.5 ? 2*u*u : 1-Math.pow(-2*u+2,2)/2;
+    camera.position.lerpVectors(fly.p0, fly.p1, e); controls.target.lerpVectors(fly.t0, fly.t1, e); if (u>=1) fly = null; }
+  controls.update(); renderer.render(scene, camera); placeLabels();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+/* ---------- ECharts ---------- */
+const AX = {axisLine:{lineStyle:{color:'#d5d9df'}}, axisLabel:{color:'#6b727e', fontSize:11, fontFamily:'Onest, Segoe UI, Arial, sans-serif'}, splitLine:{lineStyle:{color:'#eef0f2'}}};
+const TT = {backgroundColor:'rgba(255,255,255,.98)', borderColor:'#d5d9df', textStyle:{color:'#1f2328', fontSize:12, fontFamily:'Onest, Segoe UI, Arial, sans-serif'}, extraCssText:'box-shadow:0 10px 26px rgba(31,35,40,.14);border-radius:10px'};
+const wkC = echarts.init(document.getElementById('weeks'), null, {renderer:'canvas'});
+const htC = echarts.init(document.getElementById('heat'), null, {renderer:'canvas'});
+window.addEventListener('resize', () => { wkC.resize(); htC.resize(); });
+
+function renderWeeks(){
+  const deals = F.filter(f => f.sold && pass(f, ['w']));
+  const cnt = WEEKS.map(w => deals.filter(f=>f.wk===w).length);
+  const rev = WEEKS.map(w => +(deals.filter(f=>f.wk===w).reduce((a,f)=>a+f.s,0)/1e9).toFixed(2));
+  const any = S.w.size > 0;
+  wkC.setOption({
+    animationDuration:400, grid:{left:30, right:52, top:18, bottom:24},
+    tooltip:Object.assign({trigger:'axis', axisPointer:{type:'shadow', shadowStyle:{color:'rgba(31,35,40,.04)'}},
+      formatter:p => 'Неделя с '+fmtDate(WEEKS[p[0].dataIndex])+'<br>Сделок: <b>'+cnt[p[0].dataIndex]+'</b><br>Выручка: <b>'+String(rev[p[0].dataIndex]).replace('.',',')+' млрд ₽</b>'}, TT),
+    xAxis:Object.assign({type:'category', data:WEEKS.map(fmtDate), axisTick:{show:false}}, AX, {axisLabel:{color:'#6b727e', fontSize:10, interval:4, fontFamily:'Onest, Segoe UI, Arial, sans-serif'}}),
+    yAxis:[Object.assign({type:'value', minInterval:1}, AX), Object.assign({type:'value', splitLine:{show:false}}, AX, {axisLabel:{color:'#6b727e', fontSize:10, formatter:v=>String(v).replace('.',',')+' млрд'}})],
+    series:[
+      {type:'bar', data:cnt.map((v,i)=>({value:v, itemStyle:{color: any ? (S.w.has(WEEKS[i]) ? '#2fa36b' : '#e3e6ea') : '#c5cbd3', borderRadius:[3,3,0,0]}})), barWidth:'62%',
+       label:{show:true, position:'top', color:'#6b727e', fontSize:10, formatter:p=>p.value||''}},
+      {type:'line', yAxisIndex:1, data:rev, smooth:0.35, symbol:'none', lineStyle:{color:'#2fa36b', width:2.2}, areaStyle:{color:new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:'rgba(47,163,107,.18)'},{offset:1,color:'rgba(47,163,107,0)'}])}}
+    ]
+  }, true);
+}
+wkC.on('click', p => { if (p.componentType==='series') toggle('w', WEEKS[p.dataIndex]); });
+
+const BL = DIM.b.vals;
+function renderHeat(){
+  const fl = F.filter(f => pass(f, ['b','r','m','w']));
+  const data = [];
+  BL.forEach((b, yi) => [1,2,3,4].forEach((r, xi) => {
+    const g = fl.filter(f=>f.b===b && f.r===r); if (!g.length) return;
+    const s = g.filter(f=>f.sold).length;
+    data.push({value:[xi, yi, +(s/g.length).toFixed(3)], n:g.length, s, b, r});
+  }));
+  const any = S.b.size || S.r.size;
+  data.forEach(d => { const sel = (!S.b.size || S.b.has(d.b)) && (!S.r.size || S.r.has(d.r));
+    d.itemStyle = {opacity: any && !sel ? .3 : 1, borderColor: any && sel ? '#1f2328' : '#ffffff', borderWidth: any && sel ? 2 : 3, borderRadius:6}; });
+  htC.setOption({
+    animationDuration:300, grid:{left:34, right:8, top:6, bottom:24},
+    tooltip:Object.assign({formatter:p => p.data.b+', '+p.data.r+'-комн.<br>Продано <b>'+p.data.s+' из '+p.data.n+'</b> ('+Math.round(p.data.value[2]*100)+'%)'}, TT),
+    xAxis:{type:'category', data:['1-комн.','2-комн.','3-комн.','4-комн.'], axisLine:{show:false}, axisTick:{show:false}, axisLabel:{color:'#6b727e', fontSize:11, fontFamily:'Onest, Segoe UI, Arial, sans-serif'}, splitArea:{show:false}},
+    yAxis:{type:'category', data:BL, inverse:true, axisLine:{show:false}, axisTick:{show:false}, axisLabel:{color:'#1f2328', fontSize:13, fontWeight:800, fontFamily:'"M PLUS Rounded 1c", Nunito, Segoe UI, Arial, sans-serif'}},
+    visualMap:{show:false, min:0, max:1, inRange:{color:['#e8957f','#f1d8a6','#cfe8d8','#6fc296']}},
+    series:[{type:'heatmap', data, label:{show:true, color:'#1f2328', fontWeight:700, fontSize:12, fontFamily:'Onest, Segoe UI, Arial, sans-serif', formatter:p=>Math.round(p.data.value[2]*100)+'%'},
+      emphasis:{itemStyle:{borderColor:'#1f2328', borderWidth:2}}}]
+  }, true);
+}
+htC.on('click', p => {
+  const d = p.data; const same = S.b.size===1 && S.b.has(d.b) && S.r.size===1 && S.r.has(d.r);
+  S.b.clear(); S.r.clear(); if (!same){ S.b.add(d.b); S.r.add(d.r); }
+  update(); if (S.b.size===1) flyToB(d.b); else flyHome();
+});
+
+function renderMgr(){
+  const deals = F.filter(f => f.sold && pass(f, ['m']));
+  const rows = DIM.m.vals.map(m => { const g = deals.filter(f=>f.m===m);
+    return {m, n:g.length, rev:g.reduce((a,f)=>a+f.s,0), disc:g.reduce((a,f)=>a+f.d,0), wd:g.filter(f=>f.d>0).length, days:g.length ? g.reduce((a,f)=>a+f.dw,0)/g.length : 0}; })
+    .sort((a,b)=>b.rev-a.rev);
+  const mx = k => Math.max(1, ...rows.map(r=>r[k]));
+  const R = mx('rev'), D = mx('disc'), DY = mx('days');
+  const bar = (v, max, col, txt) => '<div class="bar"><span style="width:'+(v/max*100)+'%;background:'+col+'"></span><em>'+txt+'</em></div>';
+  const any = S.m.size > 0;
+  document.getElementById('mg').innerHTML = '<tr><th>Менеджер</th><th class="num">Сделок</th><th>Выручка</th><th>Скидки</th><th>Дней до сделки</th></tr>' +
+    rows.map(r => '<tr class="row'+(any ? (S.m.has(r.m)?' sel':' dim') : '')+'" data-m="'+r.m+'"><td>'+r.m+'</td><td class="num">'+r.n+'</td><td>'+
+      bar(r.rev, R, 'rgba(47,163,107,.32)', bn(r.rev)+' млрд')+'</td><td>'+bar(r.disc, D, 'rgba(224,121,95,.4)', mn(r.disc)+' млн · '+r.wd+' сд.')+'</td><td>'+
+      bar(r.days, DY, 'rgba(107,114,126,.22)', r.n ? r.days.toFixed(1).replace('.',',') : '-')+'</td></tr>').join('');
+  document.querySelectorAll('#mg tr.row').forEach(tr => tr.addEventListener('click', () => toggle('m', tr.dataset.m)));
+}
+
+function update(){ buildFilters(); renderKPI(); paint(); renderLabels(); renderWeeks(); renderHeat(); renderMgr(); }
+update();
+window.__S = S; window.__toggle = toggle;
+})();
+</script>
+</body>
+</html>
